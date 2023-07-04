@@ -1,43 +1,71 @@
 package sg.edu.rp.c346.id22013834.demodatabse;
+import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
-import android.util.Log;
 
-public class DBHelper extends SQLiteOpenHelper {
+import android.os.Bundle;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
 
-    private static final int DATABASE_VER = 1;
-    private static final String DATABASE_NAME = "tasks.db";
+import java.util.ArrayList;
 
-    private static final String TABLE_TASK = "task";
-    private static final String COLUMN_ID = "_id";
-    private static final String COLUMN_DESCRIPTION = "description";
-    private static final String COLUMN_DATE = "date";
-
-    public DBHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VER);
-    }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-        String createTableSql = "CREATE TABLE " + TABLE_TASK +  "("
-                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + COLUMN_DATE + " TEXT,"
-                + COLUMN_DESCRIPTION + " TEXT )";
-        db.execSQL(createTableSql);
-        Log.i("info", "created tables");
-    }
+public class MainActivity extends AppCompatActivity {
+    Button btnInsert, btnGetTasks;
+    TextView tvResults;
+    ListView lv;
+    EditText editDesc, editDate;
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop older table if existed
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_TASK);
-        // Create table(s) again
-        onCreate(db);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        btnInsert = findViewById(R.id.btnInsert);
+        btnGetTasks = findViewById(R.id.btnGetTasks);
+        tvResults = findViewById(R.id.tvResults);
+        editDate = findViewById(R.id.editDate);
+        editDesc = findViewById(R.id.editDescription);
+        lv = findViewById(R.id.lvTasks);
 
-        // You can implement the necessary logic for handling database upgrades here
-        // This method will be called when the database version changes
-        // You can drop tables, modify table structure, or perform any other necessary updates
+        btnInsert.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Create the DBHelper object, passing in the activity's Context
+                DBHelper db = new DBHelper(MainActivity.this);
+
+                String description = editDesc.getText().toString();
+                String date = editDate.getText().toString();
+
+                // Insert a task
+                db.insertTask(description, date);
+            }
+        });
+
+        btnGetTasks.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Create the DBHelper object, passing in the activity's Context
+                DBHelper db = new DBHelper(MainActivity.this);
+
+                // Get the tasks from the database
+                ArrayList<Task> tasks = db.getTasks();
+                db.close();
+
+                // Display the descriptions in the TextView
+                StringBuilder txt = new StringBuilder();
+                for (int i = 0; i < tasks.size(); i++) {
+                    Task task = tasks.get(i);
+                    txt.append(i).append(". ").append(task.getDescription()).append("\n");
+                }
+                tvResults.setText(txt.toString());
+
+                // Display the tasks in the ListView
+                ArrayAdapter<Task> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, tasks);
+                lv.setAdapter(adapter);
+            }
+        });
     }
 }
+
